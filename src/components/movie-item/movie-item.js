@@ -1,39 +1,37 @@
-import React, { Component } from "react";
-import { format } from "date-fns";
-import Movie from "../api/api";
-import Genres from "../api/genres";
-import { Card, Image, Rate, Progress, Typography } from "antd";
+import React, { Component } from 'react'
+import { format } from 'date-fns'
+import Movie from '../api/api'
+import Genres from '../api/genres'
+import { Card, Image, Rate, Progress, Typography } from 'antd'
 
-import "./movie-item.css";
+import './movie-item.css'
 
 class MovieItem extends Component {
   state = {
-    movies: [  ],
-  };
+    movies: [],
+  }
 
-  movie = new Movie();
-  genres = new Genres();
+  movie = new Movie()
+  genres = new Genres()
 
   async componentDidMount() {
-    const movies = await this.movie.getMovie();
-    const genres = await this.genres.getGenres();
+    const movies = await this.movie.getMovie()
+    const genres = await this.genres.getGenres()
 
     const moviesWithGenres = movies.map((movie) => {
-      const genre_names = movie.genre_ids
-        .map((id) => genres.find((g) => g.id === id)?.name)
-        .filter(Boolean);
+      const genre_names = movie.genre_ids.map((id) => genres.find((g) => g.id === id)?.name).filter(Boolean)
 
       return {
         ...movie,
         genre_names,
-      };
-    });
+      }
+    })
 
-    this.setState({ movies: moviesWithGenres });
+    this.setState({ movies: moviesWithGenres })
   }
 
   render() {
-    const { movies } = this.state;
+    const { movies } = this.state
     return (
       <>
         {movies.map((item) => (
@@ -48,9 +46,7 @@ class MovieItem extends Component {
               </div>
               <div className="card__content">
                 <h3 className="card__title">{item.title}</h3>
-                <p className="card__date">
-                  {format(new Date(item.release_date), "MMMM d, y")}
-                </p>
+                <p className="card__date">{format(new Date(item.release_date), 'MMMM d, y')}</p>
                 {/* release_date */}
                 <ul className="card__genre">
                   {item.genre_names.map((genre, index) => (
@@ -59,10 +55,7 @@ class MovieItem extends Component {
                     </p>
                   ))}
                 </ul>
-                <Typography.Paragraph
-                  ellipsis={{ rows: 4 }}
-                  style={{ marginBottom: 0 }}
-                >
+                <Typography.Paragraph ellipsis={{ rows: 4 }} style={{ marginBottom: 0 }}>
                   {item.overview}
                 </Typography.Paragraph>
               </div>
@@ -70,8 +63,8 @@ class MovieItem extends Component {
           </Card>
         ))}
       </>
-    );
+    )
   }
 }
 
-export default MovieItem;
+export default MovieItem
