@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 
-import MovieList from '../movie-list/movie-list'
+import MovieList from '../movie-list/movie-list.js'
 
 import './app.css'
 
