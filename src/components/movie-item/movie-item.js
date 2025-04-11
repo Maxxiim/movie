@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import { format } from 'date-fns'
+import { Card, Typography } from 'antd'
+
 import Movie from '../api/api'
 import Genres from '../api/genres'
-import { Card, Image, Rate, Progress, Typography } from 'antd'
 
 import './movie-item.css'
 

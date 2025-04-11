@@ -1,6 +1,6 @@
 .movie-list {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 35px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 35px;
 }
