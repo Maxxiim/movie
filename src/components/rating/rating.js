@@ -1,49 +1,59 @@
 import React, { Component } from 'react'
 import { format } from 'date-fns'
-import { Card, Typography, Spin, Rate } from 'antd'
+import { Card, Typography, Rate, Spin } from 'antd'
 
 import Connect from '../connect/connect.js'
-import './movie-item.css'
+import './rating.css'
 
-class MovieItem extends Component {
+class Rating extends Component {
   render() {
-    const { genres, vote, newMovie, loadNewMovie, search, movies, online, loading, updateRateForTask } = this.props
+    const { vote, loading, online, moviesWithRate, updateRateForTask, toggleShowSearchOrRating } = this.props
     const hasData = !(online || loading)
     const connect = !online ? <Connect /> : null
     const alert = loading ? <Spin className="spinner" size="large" /> : null
 
     let content
-    if (loadNewMovie) {
+    if (loading) {
       content = <Spin />
-    } else if (search) {
-      if (newMovie.length > 0) {
-        content = <MovieView movies={newMovie} genres={genres} vote={vote} updateRateForTask={updateRateForTask} />
-      } else {
-        content = <div className="not-found">Ничего не найдено</div>
-      }
-    } else {
-      content = !hasData ? (
-        <MovieView movies={movies} genres={genres} vote={vote} updateRateForTask={updateRateForTask} />
-      ) : (
-        <Spin />
+    }
+    if (!hasData) {
+      content = (
+        <MovieView
+          vote={vote}
+          updateRateForTask={updateRateForTask}
+          moviesWithRate={moviesWithRate}
+          toggleShowSearchOrRating={toggleShowSearchOrRating}
+        />
       )
     }
 
     return (
-      <>
-        {connect}
-        {alert}
+      <div className="rating">
+        <div className="search">
+          <div className="search__toggle">
+            <button className="btn btn__search" onClick={() => toggleShowSearchOrRating()}>
+              Search
+            </button>
+            <button className="btn btn__active btn__rating" onClick={() => toggleShowSearchOrRating()}>
+              Rating
+            </button>
+          </div>
+        </div>
         {content}
-      </>
+        {alert}
+        {connect}
+      </div>
     )
   }
 }
 
-const MovieView = ({ vote, movies, updateRateForTask }) => {
+const MovieView = ({ vote, moviesWithRate, updateRateForTask }) => {
+  if (!Array.isArray(moviesWithRate)) return null
   return (
     <React.Fragment>
-      {movies.map((item) => (
-        <Card hoverable key={item.id}>
+      {moviesWithRate.map((item, index) => (
+        <Card hoverable key={item.id || index}>
+          {' '}
           <li className="card">
             <div className="card__img-wrapper">
               <img
@@ -70,11 +80,9 @@ const MovieView = ({ vote, movies, updateRateForTask }) => {
                     <li className="card__genre-item" key={index}>
                       {genre}
                     </li>
-                  ))}{' '}
+                  ))}
                 </ul>
-              ) : (
-                ''
-              )}
+              ) : null}
               <Typography.Paragraph className="card__description" ellipsis={{ rows: 4 }} style={{ marginBottom: 0 }}>
                 {item.overview}
               </Typography.Paragraph>
@@ -87,4 +95,4 @@ const MovieView = ({ vote, movies, updateRateForTask }) => {
   )
 }
 
-export default MovieItem
+export default Rating

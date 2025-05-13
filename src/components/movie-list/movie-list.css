@@ -1,4 +1,11 @@
+.movie-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .movie-list {
+  margin-bottom: 37px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
