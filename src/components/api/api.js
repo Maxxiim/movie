@@ -1,10 +1,10 @@
 import Guest from './guest.js'
 
 class Movie {
-  async getResourse() {
+  async getResourse(sortOption = 'popularity.desc', page = 1) {
     const sessionId = await new Guest().getGuestId()
     try {
-      const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&guest_session_id=${sessionId}`
+      const url = `https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=${page}&sort_by=${sortOption}&guest_session_id=${sessionId}`
       const options = {
         method: 'GET',
         headers: {
@@ -25,13 +25,14 @@ class Movie {
     }
   }
 
-  async getMovie() {
+  async getTotalList() {
     try {
       const res = await this.getResourse()
-      const data = res.results
+      const data = res.total_results
+      console.log(data)
       return data
-    } catch (error) {
-      throw new Error(error)
+    } catch (err) {
+      console.log(err)
     }
   }
 }

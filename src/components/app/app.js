@@ -5,88 +5,32 @@ import Rating from '../rating/rating.js'
 import Movie from '../api/api.js'
 import Multy from '../api/multi.js'
 import { GenresConsumer } from '../api/genre-context.js'
-
 import './app.css'
 
 class App extends Component {
   state = {
     showCompSearchOrRate: true,
     movies: [],
-    newMovie: [],
-    loading: true,
-    vote_average: 0,
+    searchResults: [],
+    loading: false,
+    moviesWithRate: [],
     online: window.navigator.onLine,
     searchPerformed: false,
     totalMovies: 0,
     currentPage: 1,
-    sortOption: 'popular',
+    sortOption: 'popularity.desc',
+    searchQuery: '',
   }
 
   movie = new Movie()
   multy = new Multy()
 
-  async componentDidMount() {
+  componentDidMount() {
     window.addEventListener('online', this.updateStatus)
     window.addEventListener('offline', this.updateStatus)
 
-    const movies = await this.movie.getMovie()
-    const storageLocal = localStorage.getItem('moviesWithRate')
-    const moviesWithRate = storageLocal ? JSON.parse(storageLocal) : []
-
-    const syncRating = (apiMovies) => {
-      return apiMovies.map((movie) => {
-        const ratedMovie = moviesWithRate.find((rated) => rated.id === movie.id)
-        if (ratedMovie) {
-          // Синхронизируем rating_star, если они различаются
-          if (movie.rating_star !== ratedMovie.rating_star) {
-            return {
-              ...movie,
-              rating_star: ratedMovie.rating_star,
-            }
-          }
-        }
-        return {
-          ...movie,
-          rating_star: typeof movie.rating_star === 'number' ? movie.rating_star : 0,
-        }
-      })
-    }
-
-    const updatedMovies = syncRating(movies)
-    const updatedNewMovies = syncRating(this.state.newMovie)
-
-    this.setState({
-      moviesWithRate: moviesWithRate,
-      movies: updatedMovies,
-      newMovie: updatedNewMovies,
-      totalMovies: updatedMovies.length,
-      loading: false,
-    })
-  }
-
-  updateNewMovie = (movies, searchPerformed, totalSearchedMovies = 0) => {
-    const storageLocal = localStorage.getItem('moviesWithRate')
-    const moviesWithRate = storageLocal ? JSON.parse(storageLocal) : []
-
-    const updatedNewMovies = movies.map((movie) => {
-      const ratedMovie = moviesWithRate.find((rated) => rated.id === movie.id)
-      if (ratedMovie) {
-        return {
-          ...movie,
-          rating_star: ratedMovie.rating_star,
-        }
-      }
-      return {
-        ...movie,
-        rating_star: typeof movie.rating_star === 'number' ? movie.rating_star : 0,
-      }
-    })
-
-    this.setState({
-      newMovie: updatedNewMovies,
-      searchPerformed,
-      totalSearchedMovies,
-    })
+    this.loadMovies()
+    this.loadRatings()
   }
 
   componentWillUnmount() {
@@ -98,130 +42,162 @@ class App extends Component {
     this.setState({ online: window.navigator.onLine })
   }
 
-  updateRateForTask = (id, value) => {
-    this.setState((prevState) => {
-      const updatedMovies = prevState.movies.map((movie) =>
-        movie.id === id ? { ...movie, rating_star: value } : movie
-      )
+  loadRatings = () => {
+    const stored = localStorage.getItem('moviesWithRate')
+    const moviesWithRate = stored ? JSON.parse(stored) : []
+    this.setState({ moviesWithRate })
+  }
 
-      const updatedNewMovie = prevState.newMovie.map((movie) =>
-        movie.id === id ? { ...movie, rating_star: value } : movie
-      )
+  loadMovies = async () => {
+    this.setState({ loading: true })
+    try {
+      const data = await this.movie.getResourse(this.state.sortOption, this.state.currentPage)
+      const movies = data?.results || []
+      this.setState({
+        movies: this.syncRatings(movies),
+        totalMovies: data?.total_results || 0,
+        loading: false,
+        searchPerformed: false,
+        searchQuery: '',
+        searchResults: [],
+      })
+    } catch (e) {
+      console.error('Ошибка загрузки фильмов:', e)
+      this.setState({ loading: false })
+    }
+  }
 
-      let updatedRated = prevState.moviesWithRate.map((movie) =>
-        movie.id === id ? { ...movie, rating_star: value } : movie
-      )
-
-      const updatedMovie =
-        updatedMovies.find((movie) => movie.id === id) ||
-        updatedNewMovie.find((movie) => movie.id === id) ||
-        prevState.moviesWithRate.find((movie) => movie.id === id)
-
-      const isInRated = updatedRated.some((movie) => movie.id === id)
-      if (value > 0 && !isInRated && updatedMovie) {
-        updatedRated.push({ ...updatedMovie, rating_star: value })
-      }
-
-      if (value === 0) {
-        updatedRated = updatedRated.filter((movie) => movie.id !== id)
-      }
-
-      localStorage.setItem('moviesWithRate', JSON.stringify(updatedRated))
+  syncRatings = (movies) => {
+    const { moviesWithRate } = this.state
+    return movies.map((movie) => {
+      const rated = moviesWithRate.find((m) => m.id === movie.id)
       return {
-        movies: updatedMovies,
-        newMovie: updatedNewMovie,
-        moviesWithRate: updatedRated,
+        ...movie,
+        rating_star: rated ? rated.rating_star : 0,
       }
+    })
+  }
+
+  handleSearch = async (query, page = 1) => {
+    if (!query) {
+      this.loadMovies()
+      return
+    }
+    this.setState({ loading: true })
+    try {
+      const data = await this.multy.getMulti(query, page)
+      const results = data?.results || []
+      this.setState({
+        searchResults: this.syncRatings(results),
+        totalMovies: data?.total_results || 0,
+        currentPage: page,
+        loading: false,
+        searchPerformed: true,
+        searchQuery: query,
+      })
+    } catch (e) {
+      console.error('Ошибка поиска:', e)
+      this.setState({ loading: false })
+    }
+  }
+
+  handlePageChange = (page) => {
+    const { searchPerformed, searchQuery } = this.state
+    if (searchPerformed) {
+      this.handleSearch(searchQuery, page)
+    } else {
+      this.setState({ currentPage: page }, this.loadMovies)
+    }
+  }
+
+  updateRateForTask = (id, rating_star) => {
+    this.setState((prev) => {
+      const updateList = (list) => list.map((m) => (m.id === id ? { ...m, rating_star } : m))
+
+      const movies = updateList(prev.movies)
+      const searchResults = updateList(prev.searchResults)
+
+      let moviesWithRate = prev.moviesWithRate.filter((m) => m.id !== id)
+
+      if (rating_star > 0) {
+        const movie = movies.find((m) => m.id === id) || searchResults.find((m) => m.id === id)
+        if (movie) {
+          moviesWithRate = [...moviesWithRate, { ...movie, rating_star }]
+        }
+      }
+
+      localStorage.setItem('moviesWithRate', JSON.stringify(moviesWithRate))
+
+      return { movies, searchResults, moviesWithRate }
     })
   }
 
   toggleShowSearchOrRating = () => {
-    this.setState((prevState) => ({
-      showCompSearchOrRate: !prevState.showCompSearchOrRate,
+    this.setState((prev) => ({
+      showCompSearchOrRate: !prev.showCompSearchOrRate,
     }))
   }
 
   changeSortOption = (option) => {
-    this.setState({ sortOption: option }, () => {
-      this.fetchSortedMovies(option)
-    })
-  }
+    const mapSortOptions = {
+      popular: 'popularity.desc',
+      release_date: 'release_date.desc',
+      vote_average: 'vote_average.desc',
+    }
 
-  fetchSortedMovies = async (sortOption) => {
-    const { currentPage } = this.state
-    const response = await this.movie.getMovie(sortOption, currentPage)
+    const sortOption = mapSortOptions[option] || 'popularity.desc'
 
-    this.setState({
-      movies: response.results,
-      totalMovies: response.total_results,
-      loading: false,
-    })
-  }
-
-  handlePaginationChange = (page) => {
-    this.setState({ currentPage: page }, () => {
-      this.fetchSortedMovies(this.state.sortOption)
-    })
+    this.setState({ sortOption, currentPage: 1 }, this.loadMovies)
   }
 
   getVoteClass = (vote) => {
-    if (vote <= 3) {
-      return 'card__vote-red'
-    } else if (vote <= 5) {
-      return 'card__vote-orange'
-    } else if (vote <= 7) {
-      return 'card__vote-yellow'
-    } else {
-      return 'card__vote-green'
-    }
+    if (vote <= 3) return 'card__vote-red'
+    if (vote <= 5) return 'card__vote-orange'
+    if (vote <= 7) return 'card__vote-yellow'
+    return 'card__vote-green'
   }
 
   render() {
     const {
-      totalSearchedMovies,
       showCompSearchOrRate,
       movies,
-      newMovie,
-      searchPerformed,
-      online,
+      searchResults,
       loading,
+      online,
+      searchPerformed,
       totalMovies,
       currentPage,
       moviesWithRate,
     } = this.state
 
+    const moviesToShow = searchPerformed ? searchResults : movies
+
     return (
       <GenresConsumer>
         {(genres) => {
-          const moviesWithGenres = movies.map((movie) => {
-            const genre_names = movie.genre_ids.map((id) => genres.find((g) => g.id === id)?.name).filter(Boolean)
-            return {
-              ...movie,
-              genre_names,
-              rating_star: typeof movie.rating_star === 'number' ? movie.rating_star : 0,
-            }
+          const enrichedMovies = moviesToShow.map((movie) => {
+            const genre_names = (movie.genre_ids || [])
+              .map((id) => genres.find((g) => g.id === id)?.name)
+              .filter(Boolean)
+            return { ...movie, genre_names }
           })
 
           return (
             <div className="container">
               {showCompSearchOrRate ? (
                 <MovieList
-                  totalSearchedMovies={totalSearchedMovies}
                   vote={this.getVoteClass}
-                  multy={this.multy}
-                  movie={this.movie}
-                  genres={genres}
-                  movies={moviesWithGenres}
-                  newMovie={newMovie}
-                  searchPerformed={searchPerformed}
-                  updateNewMovie={this.updateNewMovie}
-                  online={online}
+                  movies={enrichedMovies}
                   loading={loading}
+                  online={online}
                   totalMovies={totalMovies}
                   currentPage={currentPage}
+                  searchPerformed={searchPerformed}
                   updateRateForTask={this.updateRateForTask}
                   toggleShowSearchOrRating={this.toggleShowSearchOrRating}
-                  handlePaginationChange={this.handlePaginationChange}
+                  handlePaginationChange={this.handlePageChange}
+                  onSearch={this.handleSearch}
+                  changeSortOption={this.changeSortOption}
                 />
               ) : (
                 <Rating
