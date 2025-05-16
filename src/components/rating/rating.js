@@ -83,7 +83,7 @@ const MovieView = ({ vote, moviesWithRate, updateRateForTask }) => {
                   ))}
                 </ul>
               ) : null}
-              <Typography.Paragraph className="card__description" ellipsis={{ rows: 4 }} style={{ marginBottom: 0 }}>
+              <Typography.Paragraph className="card__description" ellipsis={{ rows: 2 }} style={{ marginBottom: 0 }}>
                 {item.overview}
               </Typography.Paragraph>
               <Rate value={item.rating_star} onChange={(value) => updateRateForTask(item.id, value)} />

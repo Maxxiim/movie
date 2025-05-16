@@ -7,26 +7,18 @@ import './movie-item.css'
 
 class MovieItem extends Component {
   render() {
-    const { genres, vote, newMovie, loadNewMovie, search, movies, online, loading, updateRateForTask } = this.props
-    const hasData = !(online || loading)
+    const { vote, movies, online, loading, updateRateForTask } = this.props
+
     const connect = !online ? <Connect /> : null
     const alert = loading ? <Spin className="spinner" size="large" /> : null
 
     let content
-    if (loadNewMovie) {
+    if (loading) {
       content = <Spin />
-    } else if (search) {
-      if (newMovie.length > 0) {
-        content = <MovieView movies={newMovie} genres={genres} vote={vote} updateRateForTask={updateRateForTask} />
-      } else {
-        content = <div className="not-found">Ничего не найдено</div>
-      }
+    } else if (!movies || movies.length === 0) {
+      content = <div className="not-found">Ничего не найдено</div>
     } else {
-      content = !hasData ? (
-        <MovieView movies={movies} genres={genres} vote={vote} updateRateForTask={updateRateForTask} />
-      ) : (
-        <Spin />
-      )
+      content = <MovieView movies={movies} vote={vote} updateRateForTask={updateRateForTask} />
     }
 
     return (
@@ -75,7 +67,7 @@ const MovieView = ({ vote, movies, updateRateForTask }) => {
               ) : (
                 ''
               )}
-              <Typography.Paragraph className="card__description" ellipsis={{ rows: 4 }} style={{ marginBottom: 0 }}>
+              <Typography.Paragraph className="card__description" ellipsis={{ rows: 2 }} style={{ marginBottom: 0 }}>
                 {item.overview}
               </Typography.Paragraph>
               <Rate value={item.rating_star} onChange={(value) => updateRateForTask(item.id, value)} />

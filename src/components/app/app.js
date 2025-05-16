@@ -101,6 +101,13 @@ class App extends Component {
     }
   }
 
+  handleInputSearch = (e) => {
+    const query = e.target.value.trim()
+    this.setState({ searchQuery: query }, () => {
+      this.handleSearch(query)
+    })
+  }
+
   handlePageChange = (page) => {
     const { searchPerformed, searchQuery } = this.state
     if (searchPerformed) {
@@ -186,6 +193,7 @@ class App extends Component {
             <div className="container">
               {showCompSearchOrRate ? (
                 <MovieList
+                  handleInputSearch={this.handleInputSearch}
                   vote={this.getVoteClass}
                   movies={enrichedMovies}
                   loading={loading}

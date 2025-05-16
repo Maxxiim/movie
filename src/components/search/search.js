@@ -15,7 +15,7 @@ class Search extends Component {
             Rating
           </button>
         </div>
-        <input className="input" onChange={this.props.getInputSearch} placeholder="Type to search..."></input>
+        <input className="input" onChange={this.props.getInputSearch} placeholder="Type to search..." />
       </div>
     )
   }
