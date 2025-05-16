@@ -13,11 +13,9 @@ class MovieItem extends Component {
     const alert = loading ? <Spin className="spinner" size="large" /> : null
 
     let content
-    if (loading) {
-      content = <Spin />
-    } else if (!movies || movies.length === 0) {
+    if (!loading && (!movies || movies.length === 0)) {
       content = <div className="not-found">Ничего не найдено</div>
-    } else {
+    } else if (!loading) {
       content = <MovieView movies={movies} vote={vote} updateRateForTask={updateRateForTask} />
     }
 

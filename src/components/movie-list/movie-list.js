@@ -35,7 +35,6 @@ const MovieList = ({
   return (
     <div className="movie-wrapper">
       <Search getInputSearch={handleInputSearch} toggleShowSearchOrRating={toggleShowSearchOrRating} />
-      {/* <Search toggleShowSearchOrRating={toggleShowSearchOrRating} getInputSearch={debouncedSearch} /> */}
       <ul className="movie-list">
         <MovieItem
           vote={vote}
